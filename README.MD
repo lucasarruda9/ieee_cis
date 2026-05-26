@@ -44,12 +44,12 @@ Rode o comando abaixo no terminal para instalar todas as bibliotecas de uma só 
 `jupyter notebook`
 ```
 
+Com Jupyter aberto, basta selecionar o arquivo "Rede_neural.ipynb" e executar as células em ordem.
+
 Ou via python, com 
 ```bash
 python3 Rede_neural.py
 ```
-
-Com Jupyter aberto, basta selecionar o arquivo "Rede_neural.ipynb" e executar as células em ordem.
 
 ---
 
@@ -64,3 +64,5 @@ O modelo possui uma estrutura flexível (StellarNet) baseada em camadas Lineares
 | Config 3 | [128, 64, 32] | RMSprop | 100 | 0.0005 | 0.5 |
 
 Ao final da execução, o código exibe a acurácia de teste de cada modelo e plota gráficos comparando o comportamento do Train Loss versus o Test Loss ao longo das épocas.
+
+O arquivo Python está atualizada e gera um .png do gráfico gerado.

@@ -6,8 +6,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.metrics import accuracy_score
+
+import matplotlib
+matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
 
+# Carregamento dos dados
 df = pd.read_csv("star_classification.csv")
 
 colunas_identificadoras = [
@@ -32,7 +36,7 @@ y = encoder.fit_transform(y)
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
 
-X_treino, X_teste, y_treino, y_teste = train_test_split(X, y, test_size=0.15, random_state=81,stratify=y)
+X_treino, X_teste, y_treino, y_teste = train_test_split(X, y, test_size=0.15, random_state=81, stratify=y)
 
 X_treino = torch.tensor(X_treino, dtype=torch.float32)
 X_teste = torch.tensor(X_teste, dtype=torch.float32)
@@ -46,6 +50,7 @@ teste_dataset = TensorDataset(X_teste, y_teste)
 treino_loader = DataLoader(treino_dataset, batch_size=64, shuffle=True)
 teste_loader = DataLoader(teste_dataset, batch_size=64)
 
+# Definição da Rede Neural
 class StellarNet(nn.Module):
 
     def __init__(self, input_size, hidden_layers, dropout=0.0):
@@ -67,6 +72,7 @@ class StellarNet(nn.Module):
     def forward(self, x):
         return self.network(x)
     
+# Hiperparâmetros
 configs = [
     {
         "hidden_layers": [32],
@@ -93,7 +99,9 @@ configs = [
 
 results = []
 
-for config in configs:
+# Loop de Treinamento e Validação
+for i, config in enumerate(configs):
+    print(f"Treinando Configuração {i + 1}...")
 
     model = StellarNet(
         input_size=X_treino.shape[1],
@@ -104,79 +112,45 @@ for config in configs:
     criterion = nn.CrossEntropyLoss()
 
     if config["optimizer"] == "Adam":
-
-        optimizer = optim.Adam(
-            model.parameters(),
-            lr=config["lr"],
-            weight_decay=1e-5
-        )
-
+        optimizer = optim.Adam(model.parameters(), lr=config["lr"], weight_decay=1e-5)
     elif config["optimizer"] == "SGD":
-
-        optimizer = optim.SGD(
-            model.parameters(),
-            lr=config["lr"]
-        )
-
+        optimizer = optim.SGD(model.parameters(), lr=config["lr"])
     else:
-
-        optimizer = optim.RMSprop(
-            model.parameters(),
-            lr=config["lr"]
-        )
+        optimizer = optim.RMSprop(model.parameters(), lr=config["lr"])
 
     train_losses = []
     test_losses = []
 
     for epoch in range(config["epochs"]):
-
         model.train()
-
         running_loss = 0
 
         for inputs, labels in treino_loader:
-
             optimizer.zero_grad()
-
             outputs = model(inputs)
-
             loss = criterion(outputs, labels)
-
             loss.backward()
-
             optimizer.step()
-
             running_loss += loss.item()
 
         train_loss = running_loss / len(treino_loader)
-
         train_losses.append(train_loss)
 
         model.eval()
-
         running_test_loss = 0
-
         predictions = []
         targets = []
 
         with torch.no_grad():
-
             for inputs, labels in teste_loader:
-
                 outputs = model(inputs)
-
                 loss = criterion(outputs, labels)
-
                 running_test_loss += loss.item()
-
                 _, predicted = torch.max(outputs, 1)
-
                 predictions.extend(predicted.numpy())
-
                 targets.extend(labels.numpy())
 
         test_loss = running_test_loss / len(teste_loader)
-
         test_losses.append(test_loss)
 
     accuracy = accuracy_score(targets, predictions)
@@ -187,3 +161,24 @@ for config in configs:
         "train_losses": train_losses,
         "test_losses": test_losses
     })
+
+print("\n=== RESULTADOS FINAIS ===")
+for idx, result in enumerate(results):
+    print("-" * 40)
+    print(f"Configuração {idx + 1}:")
+    print(result["config"])
+    print(f"Accuracy de Teste: {result['accuracy']:.4f}")
+
+    # Gera e salva o gráfico de loss em formato PNG
+    plt.figure(figsize=(8, 4))
+    plt.plot(result["train_losses"], label="Train Loss")
+    plt.plot(result["test_losses"], label="Test Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title(f"Configuracao {idx + 1} - {result['config']['optimizer']}")
+    plt.legend()
+    
+    nome_arquivo = f"grafico_config_{idx + 1}.png"
+    plt.savefig(nome_arquivo)
+    plt.close()
+    print(f"Gráfico salvo como: {nome_arquivo}")
