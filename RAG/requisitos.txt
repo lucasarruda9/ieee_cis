@@ -1,0 +1,6 @@
+datasets
+transformers
+sentence-transformers
+faiss-cpu
+langchain-text-splitters
+torch
